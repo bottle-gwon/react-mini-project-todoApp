@@ -1,6 +1,6 @@
 import { useEffect, useReducer, useRef, useState } from 'react'
 import './App.css'
-import search from './components/search.jsx';
+import Filtered from './components/search.jsx';
 // const STOARAGE = `http://localhost:3000/todo`;
 
 const todoReducer = (state, action) => {
@@ -30,7 +30,7 @@ function App() {
   const [time, setTime] = useState(0);
   const [isTimer, setIsTimer] = useState(false);
   const [filtered ,setFiltered] = useState([]);
-
+  const [isFilter, setIsFilter] = useState(false);
   
   useEffect(() =>{
     
@@ -59,6 +59,7 @@ function App() {
 
   useEffect(()=>{
     setData(JSON.parse(window.localStorage.getItem("todos"))||[]) 
+    setFiltered(data);
   } ,[])
   
   useEffect(() =>{
@@ -67,15 +68,21 @@ function App() {
         dispatch({type:"DELETE_TODO", payload: {id: el.id}})
       })
     }
-    if (data) {
-      console.log(data);
+    if (data && !isFilter) {
       data.map((el)=>{
         dispatch({type: "ADD_TODO", 
         payload:{...el}
       })
       }
     )
-    };
+    }else if(data && isFilter){
+      data.map((el)=>{
+        dispatch({type: "ADD_TODO", 
+        payload:{...el}
+      })
+      }
+    )
+    }
   }, [data])
 
   return (
@@ -93,7 +100,7 @@ function App() {
       <StopWatch time={time} setTime={setTime} />
 
       )}
-      
+      <Filtered todo={todo} setFiltered={setFiltered} setIsFilter={setIsFilter} />
       <TodoList todo={todo} dispatch={dispatch} 
       currentTodo = {currentTodo}
       setCurrentTodo={setCurrentTodo}
@@ -158,8 +165,7 @@ const Todo = ({todo, dispatch, currentTodo, setCurrentTodo}) =>{
         <input type="checkbox"
         checked={todo.completed}
         // checked={false}
-        onChange={(check)=>{
-          console.log(check.target.checked)
+        onChange={()=>{
           const todos = JSON.parse(window.localStorage.getItem("todos"));
           if (todos){
             const newTodo = {...todo, completed: !todo.completed}

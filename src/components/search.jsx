@@ -1,3 +1,4 @@
+import { useRef, useState } from "react";
 import App from "../App";
 
 
@@ -6,24 +7,44 @@ import App from "../App";
 // }
 
 
-const search = ({checked, search ,todo, setFiltered}) =>{
+const Filtered = ({todo, setFiltered, setIsFilter}) =>{
+    const [checking ,setChecking] = useState("ALL");
+    const [search,setSearch] = useState("");
 
-    if(search){
-        console.log("test");
+
+    const searchRef = useRef(null);
+    
+    if(checking === "ALL"){
+        setIsFilter(false);
     }
-    if(checked === "ALL"){
-        console.log("ALL")
-    }
-    else if(checked === "T"){
+    else if(checking === "T"){
         console.log("T")
     }
-    else if(checked ==="F"){
+    else if(checking ==="F"){
         console.log("F")
     }
+    if(searchRef){
+        
+        console.log("test");
+    }
+
+
     
     return(
     <>
+        <div>
+            <input type="text" placeholder="search" ref={searchRef}/>
+            <button>검색</button>
+        </div>
+        <div>
 
+            <label htmlFor="ALL">ALL</label>
+            <input type="radio" name="check" id="ALL" value="ALL"/>
+            <label htmlFor="T">Checked</label>
+            <input type="radio" name="check" id="T" value="T"/>
+            <label htmlFor="F">UnChecked</label>
+            <input type="radio" name="check" id="F" value="F"/>
+        </div>
     </>
     );
 }
@@ -33,5 +54,5 @@ const search = ({checked, search ,todo, setFiltered}) =>{
 
 
 
-export default search;
+export default Filtered;
 
