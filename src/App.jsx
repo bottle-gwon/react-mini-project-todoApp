@@ -1,4 +1,4 @@
-import { act, useEffect, useReducer, useRef, useState } from 'react'
+import { useEffect, useReducer, useRef, useState } from 'react'
 import './App.css'
 
 const STOARAGE = `http://localhost:3000/todo`;
@@ -24,23 +24,42 @@ const todoReducer = (state, action) => {
 
 
 function App() {
-  const [isLoading, data] = useFetch("http://localhost:3000/todo")
+  // const [isLoading, data] = useFetch("http://localhost:3000/todo")
+  const [data, setData] = useState([]);
+  // const [isLoading, data] = useState([])
   // const [todo, setTodo] = useState([]);
   const [todo, dispatch] = useReducer(todoReducer,[]);
   const [currentTodo, setCurrentTodo] = useState(null);
   const [time, setTime] = useState(0);
   const [isTimer, setIsTimer] = useState(false);
 
+  
   useEffect(() =>{
     
     if(currentTodo){
-      fetch(`${STOARAGE}/${currentTodo}`, {
-        method: "PATCH",
-        body: JSON.stringify({ time : todo.find((el) => el.id === currentTodo)
-      .time + 1}),
-      })
-      .then(res => res.json())
-      .then(res => dispatch({type : "UPDATE_TODO", payload:{...res}}))
+
+      const todos = JSON.parse(window.localStorage.getItem("todos"));
+        if (todos){
+          const callTodo  = todos.find((el) => 
+            el.id === currentTodo
+          );
+          const newTodo = {...callTodo, time: callTodo.time +1}
+          console.log(newTodo);
+          const checkedTodo = todos.map((el) => 
+            el.id === newTodo.id ? newTodo : el
+          )
+
+          window.localStorage.setItem("todos", JSON.stringify(checkedTodo));
+          dispatch({type : "UPDATE_TODO", payload:{...newTodo}})
+        }
+
+      // fetch(`${STOARAGE}/${currentTodo}`, {
+      //   method: "PATCH",
+      //   body: JSON.stringify({ time : todo.find((el) => el.id === currentTodo)
+      // .time + 1}),
+      // })
+      // .then(res => res.json())
+      // .then(res => dispatch({type : "UPDATE_TODO", payload:{...res}}))
 
     }
   }, [time])
@@ -49,6 +68,10 @@ function App() {
     setTime(0);
   },[isTimer])
 
+  useEffect(()=>{
+    setData(JSON.parse(window.localStorage.getItem("todos"))||[]) 
+  } ,[])
+  
   useEffect(() =>{
     if(todo){
       todo.map((el)=>{ 
@@ -56,7 +79,7 @@ function App() {
       })
     }
     if (data) {
-      console.log("work");
+      console.log(data);
       data.map((el)=>{
         dispatch({type: "ADD_TODO", 
         payload:{...el}
@@ -64,7 +87,7 @@ function App() {
       }
     )
     };
-  }, [isLoading])
+  }, [data])
 
   return (
     <>
@@ -96,18 +119,15 @@ const TodoInput = ( {dispatch} ) =>{
   const inputRef = useRef(null);
   const addTodo = () =>{
     const newTodo={
+      id : new Date(),
       content: inputRef.current.value,
       time: 0,
       completed: false,
     };
-    fetch(STOARAGE,{
-      method: "POST",
-      body: JSON.stringify(newTodo),
-    })
-    .then(res => res.json())
-  //   .then((res) => setTodo((prev) => [...prev, res]
-  // ));
-    .then((res) => dispatch({type: "ADD_TODO", payload: {...res}}))
+    const todos = JSON.parse(window.localStorage.getItem("todos")) || [];
+
+    window.localStorage.setItem("todos", JSON.stringify([...todos, newTodo]));
+    dispatch({type: "ADD_TODO", payload: newTodo})
     inputRef.current.value = "";
   }
   
@@ -147,18 +167,19 @@ const Todo = ({todo, dispatch, currentTodo, setCurrentTodo}) =>{
       currentTodo === todo.id ? 'current':''}>
       <div>
         <input type="checkbox"
-        // checked={todo.completed}
+        checked={todo.completed}
         // checked={false}
         onChange={(check)=>{
           console.log(check.target.checked)
-
-           fetch(`${STOARAGE}/${todo.id}`, {
-            method: "PATCH",
-            body: JSON.stringify({ completed : !todo.completed}),
-            })
-          .then(res => res.json())
-          .then(res => dispatch({type : "UPDATE_TODO", payload:{...res}}))
-
+          const todos = JSON.parse(window.localStorage.getItem("todos"));
+          if (todos){
+            const newTodo = {...todo, completed: !todo.completed}
+            const checkedTodo = todos.map((el) => 
+              el.id === todo.id ? newTodo : el
+            )
+            window.localStorage.setItem("todos", JSON.stringify(checkedTodo));
+            dispatch({type : "UPDATE_TODO", payload:{...newTodo}})
+          }
         }}
         />
         {todo.content} 
@@ -170,15 +191,12 @@ const Todo = ({todo, dispatch, currentTodo, setCurrentTodo}) =>{
         onClick={() => setCurrentTodo(todo.id)}
       >시작하기</button>
       <button onClick={ ()=>{
-        fetch(`${STOARAGE}/${todo.id}`,{
-          method: "DELETE",
-        })
-        .then(res => {
-          if(res.ok){
-            // setTodo(prev=>prev.filter(el=>el.id!==todo.id))
-            dispatch({type: "DELETE_TODO", payload:{id:todo.id}})
-          }
-        })
+        const todos = JSON.parse(window.localStorage.getItem("todos"));
+        if(todos){
+          const newTodo  = todos.filter(el => el.id !== todo.id);
+          window.localStorage.setItem("todos", JSON.stringify(newTodo));
+          dispatch({type: "DELETE_TODO", payload:{id:todo.id}})
+        }
       }}>삭제</button>
       </div>
     </li>
