@@ -1,7 +1,7 @@
 import { useEffect, useReducer, useRef, useState } from 'react'
 import './App.css'
-
-const STOARAGE = `http://localhost:3000/todo`;
+import search from './components/search.jsx';
+// const STOARAGE = `http://localhost:3000/todo`;
 
 const todoReducer = (state, action) => {
   switch (action.type) {
@@ -24,14 +24,12 @@ const todoReducer = (state, action) => {
 
 
 function App() {
-  // const [isLoading, data] = useFetch("http://localhost:3000/todo")
   const [data, setData] = useState([]);
-  // const [isLoading, data] = useState([])
-  // const [todo, setTodo] = useState([]);
   const [todo, dispatch] = useReducer(todoReducer,[]);
   const [currentTodo, setCurrentTodo] = useState(null);
   const [time, setTime] = useState(0);
   const [isTimer, setIsTimer] = useState(false);
+  const [filtered ,setFiltered] = useState([]);
 
   
   useEffect(() =>{
@@ -52,15 +50,6 @@ function App() {
           window.localStorage.setItem("todos", JSON.stringify(checkedTodo));
           dispatch({type : "UPDATE_TODO", payload:{...newTodo}})
         }
-
-      // fetch(`${STOARAGE}/${currentTodo}`, {
-      //   method: "PATCH",
-      //   body: JSON.stringify({ time : todo.find((el) => el.id === currentTodo)
-      // .time + 1}),
-      // })
-      // .then(res => res.json())
-      // .then(res => dispatch({type : "UPDATE_TODO", payload:{...res}}))
-
     }
   }, [time])
 
@@ -105,11 +94,11 @@ function App() {
 
       )}
       
-      <TodoInput dispatch={dispatch} />
       <TodoList todo={todo} dispatch={dispatch} 
       currentTodo = {currentTodo}
       setCurrentTodo={setCurrentTodo}
       />
+      <TodoInput dispatch={dispatch} />
     </>
   )
 }
