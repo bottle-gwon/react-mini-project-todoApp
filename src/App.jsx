@@ -4,9 +4,12 @@ import { useEffect, useRef, useState } from 'react'
 import './App.css'
 
 function App() {
-  const [todo, setTodo] = useState([{
-    id: Number(new Date()), content: '안녕하세요'
-}]);
+  const [isLoading, data] = useFetch("http://localhost:3000/todo")
+  const [todo, setTodo] = useState([]);
+
+  useEffect(() =>{
+    if (data) setTodo(data);
+  }, [isLoading])
 
   return (
     <>
@@ -17,6 +20,66 @@ function App() {
     </>
   )
 }
+
+
+const TodoInput = ( {setTodo} ) =>{
+  const inputRef = useRef(null);
+  const addTodo = () =>{
+    const newTodo={
+      content: inputRef.current.value,
+    };
+    fetch("http://localhost:3000/todo",{
+      method: "POST",
+      body: JSON.stringify(newTodo),
+    })
+    .then(res => res.json())
+    .then((res) => setTodo((prev) => [...prev, res]
+  ));
+    inputRef.current.value = "";
+  }
+  
+  return(
+    <>
+      <input ref ={inputRef} />
+      <button onClick={addTodo}>추가</button>
+    </>
+  )
+  
+}
+
+
+
+const TodoList = ({ todo, setTodo }) =>{
+  return(
+    <ul>
+      {todo.map((el) => (
+        <Todo key={el.id} todo = {el} setTodo={setTodo} />
+      )
+      )}
+    </ul>
+
+  );
+};
+
+const Todo = ({todo, setTodo}) =>{
+  return (
+    <li>
+      {todo.content}
+      <button onClick={ ()=>{
+        fetch(`http://localhost:3000/todo/${todo.id}`,{
+          method: "DELETE",
+        })
+        .then(res => {
+          if(res.ok){
+            setTodo(prev=>prev.filter(el=>el.id!==todo.id))
+          }
+        })
+      }}>삭제</button>
+    </li>
+  )
+}
+
+
 
 
 const useFetch = (url) =>{
@@ -160,49 +223,5 @@ const Timer = () => {
 
 
 
-const TodoInput = ( {setTodo} ) =>{
-  const inputRef = useRef(null);
-  const addTodo = () =>{
-    const newTodo={
-      id: Number(new Date()),
-      content: inputRef.current.value,
-    };
-    setTodo((prev) => [...prev, newTodo]);
-    inputRef.current.value = "";
-  }
-  
-  return(
-    <>
-      <input ref ={inputRef} />
-      <button onClick={addTodo}>추가</button>
-    </>
-  )
-  
-}
-
-
-
-const TodoList = ({ todo, setTodo }) =>{
-  return(
-    <ul>
-      {todo.map((el) => (
-        <Todo key={el.id} todo = {el} setTodo={setTodo} />
-      )
-      )}
-    </ul>
-
-  );
-};
-
-const Todo = ({todo, setTodo}) =>{
-  return (
-    <li>
-      {todo.content}
-      <button onClick={ ()=>{
-        setTodo(prev=>prev.filter(el=>el.id!==todo.id))
-      }}>삭제</button>
-    </li>
-  )
-}
 
 export default App
