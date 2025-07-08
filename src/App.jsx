@@ -1,11 +1,32 @@
-import { useEffect, useRef, useState } from 'react'
-// import reactLogo from './assets/react.svg'
-// import viteLogo from '/vite.svg'
+import { act, useEffect, useReducer, useRef, useState } from 'react'
 import './App.css'
+
+const STOARAGE = `http://localhost:3000/todo`;
+
+const todoReducer = (state, action) => {
+  switch (action.type) {
+    case "ADD_TODO":
+      return [...state, action.payload];
+    case "READ_TODO":
+      return state;
+    case "UPDATE_TODO":
+      return state.map((el) => 
+        el.id === action.payload.id ?
+        action.payload:
+        el
+      );
+    case "DELETE_TODO":
+      return state.filter((el) => el.id !== action.payload.id);
+    default:
+      return state;
+  }
+}
+
 
 function App() {
   const [isLoading, data] = useFetch("http://localhost:3000/todo")
-  const [todo, setTodo] = useState([]);
+  // const [todo, setTodo] = useState([]);
+  const [todo, dispatch] = useReducer(todoReducer,[]);
   const [currentTodo, setCurrentTodo] = useState(null);
   const [time, setTime] = useState(0);
   const [isTimer, setIsTimer] = useState(false);
@@ -13,13 +34,13 @@ function App() {
   useEffect(() =>{
     
     if(currentTodo){
-      fetch(`http://localhost:3000/todo/${currentTodo}`, {
+      fetch(`${STOARAGE}/${currentTodo}`, {
         method: "PATCH",
         body: JSON.stringify({ time : todo.find((el) => el.id === currentTodo)
       .time + 1}),
       })
       .then(res => res.json())
-      .then(res => setTodo(prev => prev.map(el => el.id === currentTodo ? res : el)))
+      .then(res => dispatch({type : "UPDATE_TODO", payload:{...res}}))
 
     }
   }, [time])
@@ -29,7 +50,20 @@ function App() {
   },[isTimer])
 
   useEffect(() =>{
-    if (data) setTodo(data);
+    if(todo){
+      todo.map((el)=>{ 
+        dispatch({type:"DELETE_TODO", payload: {id: el.id}})
+      })
+    }
+    if (data) {
+      console.log("work");
+      data.map((el)=>{
+        dispatch({type: "ADD_TODO", 
+        payload:{...el}
+      })
+      }
+    )
+    };
   }, [isLoading])
 
   return (
@@ -48,8 +82,8 @@ function App() {
 
       )}
       
-      <TodoInput setTodo={setTodo} />
-      <TodoList todo={todo} setTodo={setTodo} 
+      <TodoInput dispatch={dispatch} />
+      <TodoList todo={todo} dispatch={dispatch} 
       currentTodo = {currentTodo}
       setCurrentTodo={setCurrentTodo}
       />
@@ -58,20 +92,22 @@ function App() {
 }
 
 
-const TodoInput = ( {setTodo} ) =>{
+const TodoInput = ( {dispatch} ) =>{
   const inputRef = useRef(null);
   const addTodo = () =>{
     const newTodo={
       content: inputRef.current.value,
       time: 0,
+      completed: false,
     };
-    fetch("http://localhost:3000/todo",{
+    fetch(STOARAGE,{
       method: "POST",
       body: JSON.stringify(newTodo),
     })
     .then(res => res.json())
-    .then((res) => setTodo((prev) => [...prev, res]
-  ));
+  //   .then((res) => setTodo((prev) => [...prev, res]
+  // ));
+    .then((res) => dispatch({type: "ADD_TODO", payload: {...res}}))
     inputRef.current.value = "";
   }
   
@@ -86,14 +122,15 @@ const TodoInput = ( {setTodo} ) =>{
 
 
 
-const TodoList = ({ todo, setTodo, setCurrentTodo, currentTodo }) =>{
+const TodoList = ({ todo, dispatch, setCurrentTodo, currentTodo }) =>{
   return(
     <ul>
-      {todo.map((el) => (
+      {todo.map((el) => 
+        (
         <Todo 
         key={el.id} 
         todo = {el} 
-        setTodo={setTodo} 
+        dispatch={dispatch} 
         currentTodo = {currentTodo}
         setCurrentTodo={setCurrentTodo}
         />
@@ -104,12 +141,27 @@ const TodoList = ({ todo, setTodo, setCurrentTodo, currentTodo }) =>{
   );
 };
 
-const Todo = ({todo, setTodo, currentTodo, setCurrentTodo}) =>{
+const Todo = ({todo, dispatch, currentTodo, setCurrentTodo}) =>{
   return (
     <li className={
       currentTodo === todo.id ? 'current':''}>
       <div>
-        {todo.content}
+        <input type="checkbox"
+        // checked={todo.completed}
+        // checked={false}
+        onChange={(check)=>{
+          console.log(check.target.checked)
+
+           fetch(`${STOARAGE}/${todo.id}`, {
+            method: "PATCH",
+            body: JSON.stringify({ completed : !todo.completed}),
+            })
+          .then(res => res.json())
+          .then(res => dispatch({type : "UPDATE_TODO", payload:{...res}}))
+
+        }}
+        />
+        {todo.content} 
         <br/>
         {formatTime(todo.time)}
       </div>
@@ -118,12 +170,13 @@ const Todo = ({todo, setTodo, currentTodo, setCurrentTodo}) =>{
         onClick={() => setCurrentTodo(todo.id)}
       >시작하기</button>
       <button onClick={ ()=>{
-        fetch(`http://localhost:3000/todo/${todo.id}`,{
+        fetch(`${STOARAGE}/${todo.id}`,{
           method: "DELETE",
         })
         .then(res => {
           if(res.ok){
-            setTodo(prev=>prev.filter(el=>el.id!==todo.id))
+            // setTodo(prev=>prev.filter(el=>el.id!==todo.id))
+            dispatch({type: "DELETE_TODO", payload:{id:todo.id}})
           }
         })
       }}>삭제</button>
@@ -271,8 +324,6 @@ const Timer = ({time, setTime}) => {
     </div>
   )
 }
-
-
 
 
 export default App
