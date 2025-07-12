@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import App from "../App";
 
 
@@ -11,20 +11,26 @@ const Filtered = ({todo, setFiltered, setIsFilter}) =>{
     const [checking ,setChecking] = useState("ALL");
     const [search,setSearch] = useState("");
 
-
+    const checkHandler = (e) =>{
+        setChecking(e.target.value);
+    }
     const searchRef = useRef(null);
     
-    if(checking === "ALL"){
+    useEffect(()=>{
+        if(checking === "ALL"){
         setIsFilter(false);
-    }
-    else if(checking === "T"){
-        console.log("T")
-    }
-    else if(checking ==="F"){
-        console.log("F")
-    }
+        console.log('ALL');
+        }
+        else if(checking === "T"){
+            console.log("T")
+        }
+        else if(checking ==="F"){
+            console.log("F")
+        }
+    },[checking])
+
+    
     if(searchRef){
-        
         console.log("test");
     }
 
@@ -39,11 +45,17 @@ const Filtered = ({todo, setFiltered, setIsFilter}) =>{
         <div>
 
             <label htmlFor="ALL">ALL</label>
-            <input type="radio" name="check" id="ALL" value="ALL"/>
+            <input type="radio" name="check" id="ALL" value="ALL"
+                onChange={checkHandler}
+            />
             <label htmlFor="T">Checked</label>
-            <input type="radio" name="check" id="T" value="T"/>
+            <input type="radio" name="check" id="T" value="T"
+                onChange={checkHandler}
+            />
             <label htmlFor="F">UnChecked</label>
-            <input type="radio" name="check" id="F" value="F"/>
+            <input type="radio" name="check" id="F" value="F"
+                onChange={checkHandler}
+            />
         </div>
     </>
     );
